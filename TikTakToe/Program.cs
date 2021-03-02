@@ -10,8 +10,6 @@ using System.Linq;
  Компьютер сначала ищет линию с 1 недостающей ячейкой для победы, если это линия компьютера - то ставит туда и завершает игру.
  Если это линия пользователя, то запомниает чтобы перекрыть, но ищет - вдруг есть линия своя для победы
  Если нечего перекрывать, то рандомно ходит в доступную ячейку
-
- - Известная ошибка - когда пользователь идет в обратную сторону (лечится доп проходом по step с конца)
  */
 namespace TikTakToe
 {
@@ -137,50 +135,45 @@ namespace TikTakToe
                     emptyIndexes.Add(cell.Index);
                     continue;
                 }
-
-                var count = 1;
+                
                 var isUser = cell.State.Value;
+
                 foreach (var step in cell.Steps)
                 {
-                    var isReverse = false;
+                    var count = 1;
 
-                    while (true)
+                    // Делаем 3 прыжка - тк 3 в ряд это победа
+                    for (; count < 3; count++)
                     {
-                        // Проход в 1 сторону
-                        for (var i = isReverse ? 3 : 1; i < 3; i++)
+                        index = cell.Index + step * count;
+                        var nextCell = box[index];
+
+                        if (!nextCell.State.HasValue)
                         {
-                            index = cell.Index + step * i;
-                            var nextCell = box[index];
-
-                            if (!nextCell.State.HasValue)
+                            // Если у нас ктото близок к победе
+                            // либо побеждаем - либо перекрываем
+                            if (count == 2)
                             {
-                                // Если у нас ктото близок к победе
-                                // либо побеждаем - либо перекрываем
-                                if (count == 2)
+                                // Если компьютер побеждает - завершаем игру
+                                if (!isUser)
                                 {
-                                    // Если компьютер побеждает - завершаем игру
-                                    if (!isUser)
-                                    {
-                                        nextCell.State = false;
-                                        Console.WriteLine($"Computer move: {GetKey(index)}");
-                                        return;
-                                    }
-                                    else // Если у нас человек - то мы запоминает index  и смотрим - вдруг есть победа компьюетра
-                                        moveIndex = index;
+                                    nextCell.State = false;
+                                    Console.WriteLine($"Computer move: {GetKey(index)}");
+                                    return;
                                 }
-
-                                break;
+                                else // Если у нас человек - то мы запоминает index  и смотрим - вдруг есть победа компьюетра
+                                    moveIndex = index;
                             }
-                            else if (nextCell.State.Value != isUser)
-                                break;
 
-                            count++;
+                            break;
                         }
+                        else if (nextCell.State.Value != isUser)
+                            break;
                     }
-                }
 
-                if (count == 3)
-                    throw new InvalidOperationException("Мы пропустили чью то победу");
+                    if (count == 3)
+                        throw new InvalidOperationException("Мы пропустили чью то победу");
+                }
             }
 
             // Закрываем поле пользователя
@@ -273,11 +266,22 @@ namespace TikTakToe
                         Steps = new int[] { 3 };
                         break;
                     case 2:
-                        Steps = new int[] { 2, 3 };
+                        Steps = new int[] { 2, 3 , -1};
                         break;
                     case 3:
-                    case 6:
                         Steps = new int[] { 1 };
+                        break;
+                    case 5:
+                        Steps = new int[] { -1 };
+                        break;
+                    case 6:
+                        Steps = new int[] { 1, -3 };
+                        break;
+                    case 7:
+                        Steps = new int[] { -3 };
+                        break;
+                    case 8:
+                        Steps = new int[] { -1, -3, -4 };
                         break;
                     default:
                         Steps = new int[0];
